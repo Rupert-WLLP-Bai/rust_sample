@@ -78,3 +78,37 @@
    ```
    cargo test
    ```
+
+## benchmark
+### 官方库出现 0ns/iter 的原因
+
+其实，原因藏在`LLVM`中: `LLVM`认为`fibonacci_u64`函数调用的结果没有使用，同时也认为该函数没有任何副作用(造成其它的影响，例如修改外部变量、访问网络等), 因此它有理由把这个函数调用优化掉！
+
+### 解决方法
+使用`criterion.rs`库进行基准测试。
+
+在`benches`目录下创建基准测试文件，文件名以`.rs`结尾。基准测试文件的内容如下：
+
+```rust
+use criterion::{criterion_group, criterion_main, Criterion};
+
+pub fn criterion_benchmark(c: &mut Criterion) {
+    c.bench_function("function_name", |b| b.iter(|| 1 + 2));
+}
+
+criterion_group!(benches, criterion_benchmark);
+criterion_main!(benches);
+```
+
+其中，`function_name`是基准测试的名称，`1 + 2`是要测试的代码。
+
+在`Cargo.toml`文件中添加如下内容：
+
+```toml
+[dev-dependencies]
+criterion = "0.4"
+
+[[bench]]
+name = "bench_name"  # 基准测试的名称, 与基准测试文件中的名称一致
+harness = false
+```
